@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from . import mysqldb
+from resource import mysqldb
 
 hellobp = Blueprint('hello', __name__, url_prefix='/hello')
 
