@@ -11,11 +11,4 @@ def hello():
 
 @hellobp.route('/test')
 def test():
-	mydb = mysqldb.get_db()
-	cursor = mydb.cursor()
-	sql = "SELECT * FROM test"
-	cursor.execute(sql)
-	result = cursor.fetchone()
-	print(result)
-
-	return jsonify({'code': 200, 'message': result})
+	return "ssssss"
