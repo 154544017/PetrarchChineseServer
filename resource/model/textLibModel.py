@@ -6,10 +6,17 @@ class TextLibrary(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     textlibrary_name = db.Column(db.String(255))
     description = db.Column(db.String(255))
-    line_no = db.Column(db.Integer)
+    line_no = db.Column(db.Integer, default=0)
+    # 0表示未导入
+    import_status = db.Column(db.Integer, default=0)
     create_user = db.Column(db.Integer)
     create_time = db.Column(db.DateTime)
+    # 0表示未删除
+    is_delete = db.Column(db.Integer, default=0)
+    delete_time = db.Column(db.DateTime)
 
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):
         return '<TEXT_LIBRARY {}>'.format(self.textlibrary_name)

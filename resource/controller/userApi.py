@@ -30,9 +30,9 @@ def verify_token(token):
         # 转换为字典
         data = s.loads(token)
     except BaseException:
-        return jsonify(code=20001,flag=False,message="登录未授权")
+        return "登录未授权"
     except SignatureExpired:
-        return jsonify(code=20002,flag=False,message="登录已过期")
+        return "登录已过期"
     uid = data["id"]
     return uid
 
@@ -60,7 +60,7 @@ def register():
     if username and password:
         if userModel.User.query.filter_by(name=username).first():
             return jsonify(code=20001, flag=False, message="该账号已存在")
-        user = userModel.User(name=username,password=spw(password),nickname="admin",create_time=datetime.datetime.now())
+        user = userModel.User(name=username, password=spw(password), nickname="admin",create_time=datetime.datetime.now())
         db.session.add(user)
         db.session.commit()
         return jsonify(code=20000, flag=True, message="注册成功")
@@ -72,7 +72,7 @@ def login():
     params = request.json
     username = params["username"]
     password = params["password"]
-    user = userModel.User.query.filter_by(username=username).first()
+    user = userModel.User.query.filter_by(name=username).first()
     if user is not None:
         if spw(password) == user.password:
             token = create_token(user.id)
