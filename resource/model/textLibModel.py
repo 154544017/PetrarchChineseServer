@@ -1,5 +1,6 @@
 from resource import db
 
+
 class TextLibrary(db.Model):
     """文本库表"""
     __tablename__ = "rs_textlibrary"

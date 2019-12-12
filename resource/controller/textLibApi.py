@@ -1,10 +1,12 @@
 from flask import Flask, blueprints, jsonify, request, Blueprint,g
+from werkzeug.utils import secure_filename
+import os
 from ..model.textLibModel import TextLibrary
 from ..model.textLibDataModel import TextLibraryData
 from resource import db
 import datetime
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.automap import automap_base
+import pandas as pd
+
 textLib_api = Blueprint(name="textLib_api", import_name=__name__)
 
 
@@ -71,9 +73,9 @@ def modify_text_lib(id):
 
 
 @textLib_api.route("/<page>/<size>",methods=["GET"])
-def get_text_libs(page=1,size=10):
+def get_text_libs(page=1, size=10):
     try:
-        libs = TextLibrary.query.all()
+        libs = TextLibrary.query.filter(TextLibrary.is_delete==1).all()
         start = (int(page) - 1) * int(size)
         end = min(int(page) * int(size), len(libs))
         libs_json=[]
@@ -85,18 +87,134 @@ def get_text_libs(page=1,size=10):
         return jsonify(code=20001, flag=False, message="未找到文本库信息")
 
 
-@textLib_api.route("/<lib>/<page>/<size>")
-def get_text_lib_data(lib, page, size):
-    text_lib_data_table = "rs_textlibrary_data_"
-    AutoBase = automap_base()
-    AutoBase.prepare(db.engine, reflect=True)
-    tablename1 = text_lib_data_table+"1"
-    TextLibDataModel = getattr(AutoBase.classes, tablename1)
-    db.session = Session(db.engine)
-    rs1 = db.session.query(TextLibDataModel).all()
-    AutoBase.prepare(db.engine, reflect=True)
-    tablename2 = text_lib_data_table + "2"
-    TextLibDataModel2 = getattr(AutoBase.classes, tablename2)
-    db.session = Session(db.engine)
-    rs2 = db.session.query(TextLibDataModel2).all()
-    return "well"
+@textLib_api.route("/<id>",methods=["delete"])
+def delete_text_lib(id):
+    try:
+        # 删除文本库
+        text_lib = TextLibrary.query.get(id)
+        text_lib.is_delete = 1
+        text_lib.delete_time = datetime.datetime.now()
+        db.session.commit()
+        # 删除对应的文本库数据
+        table_name = "rs_textlibrary_data_"+str(id)
+        TextLibraryData.__table__.name = table_name
+        text_lib_all_data = TextLibraryData.query.all()
+        for data in text_lib_all_data:
+            data.is_delete = 1
+            db.session.commit()
+        return jsonify(code=20000, flag=True, message="删除成功")
+    except:
+        return jsonify(code=20001, flag=False, message="删除失败")
+
+
+@textLib_api.route("/<lib>/<page>/<size>", methods=["get"])
+def get_text_lib_all_data(lib, page, size):
+    try:
+        table_name = "rs_textlibrary_data_" + str(lib)
+        TextLibraryData.__table__.name = table_name
+        res = TextLibraryData.query.filter(TextLibraryData.is_delete != 1).all()
+        start = (int(page) - 1) * int(size)
+        end = min(int(page) * int(size), len(res))
+        data_json = []
+        for data in res[start:end]:
+            data_json.append(data.as_dict())
+        return jsonify(code=20000, flag=True, message="查询成功", data={"total": len(res), "rows": data_json})
+    except:
+        return jsonify(code=20001, flag=False, message="查询失败")
+
+
+@textLib_api.route('/<lib>', methods=['POST'])
+def add_text_lib_data(lib):
+    # 打开对应的文本库数据表
+    table_name = "rs_textlibrary_data_" + str(lib)
+    TextLibraryData.__table__.name = table_name
+    # 保存文件
+    try:
+        upload_file = request.files['data']
+        file_name = str(lib)+ "_" + secure_filename(upload_file.filename)
+        print(file_name)
+        if upload_file is None:
+            return jsonify(code=20001, flag=False, message="data_file is null")
+        upload_path = os.path.join(os.path.abspath('..'), 'PetrarchChineseServer','article', file_name)
+        print(upload_path)
+        upload_file.save(upload_path)
+    except Exception as e:
+        return jsonify(code=20002, flag=False, message="上传文件出错")
+    # 处理文件
+    try:
+        title = request.form.get("title")
+        summary = request.form.get("summary")
+        keywords = request.form.get("keywords")
+        publish_time = request.form.get("publish_time")
+        author = request.form.get("author")
+        content = request.form.get("content")
+        url = request.form.get("url")
+        df = pd.read_excel(upload_path)
+        all_data = df.loc[:, [title,summary,keywords,publish_time,author,content,url]].values
+        for data in all_data:
+            new_article = TextLibraryData(title=data[0],summary=data[1],keywords=data[2],publish_time=pd.Timestamp(data[3],tz=None).to_pydatetime(),author=data[4],content=data[5],url=data[6],create_time=datetime.datetime.now())
+            db.session.add(new_article)
+            db.session.commit()
+        return jsonify(code=20000, flag=True, message="成功导入"+str(len(all_data)) + "条数据")
+    except Exception as e:
+        return jsonify(code=20003, flag=False, message="文本库导入数据出错")
+
+
+@textLib_api.route("/<lib>/<id>",methods=["put"])
+def modify_text_lib_data(lib,id):
+    try:
+        params = request.json
+        table_name = "rs_textlibrary_data_" + str(lib)
+        TextLibraryData.__table__.name = table_name
+        data = TextLibraryData.query.get(id)
+        data.title = params["title"]
+        data.summary = params["summary"]
+        data.author = params["author"]
+        data.url = params["url"]
+        db.session.commit()
+        return jsonify(code=20000, flag=True, message="文本库数据修改成功")
+    except Exception as e:
+        return jsonify(code=20001, flag=False, message="修改文本库数据失败")
+
+
+@textLib_api.route("/<lib>/<id>",methods=["delete"])
+def delete_text_lib_data(lib, id):
+    try:
+        table_name = "rs_textlibrary_data_" + str(lib)
+        TextLibraryData.__table__.name = table_name
+        data = TextLibraryData.query.get(id)
+        data.is_delete = 1
+        db.session.commit()
+        lib = TextLibrary.query.get(lib)
+        lib.line_no = lib.line_no - 1
+        lib.import_status = 0 if lib.line_no == 0 else 1
+        db.session.commit()
+        return jsonify(code=20000, flag=True, message="删除文本库数据成功")
+    except Exception as e:
+        return jsonify(code=20001, flag=False, message="删除文本库数据失败")
+
+
+@textLib_api.route("/data/<lib>/<id>",methods=["get"])
+def get_text_lib_data(lib, id):
+    try:
+        table_name = "rs_textlibrary_data_" + str(lib)
+        TextLibraryData.__table__.name = table_name
+        data = TextLibraryData.query.get(id)
+        return jsonify(code=20000, flag=True, message="查询成功",data=data.as_dict())
+    except Exception as e:
+        return jsonify(code=20001, flag=False, message="查询失败")
+
+
+@textLib_api.route("/related/<lib>/<id>",methods=["get"])
+def get_related_data(lib, id):
+    try:
+        table_name = "rs_textlibrary_data_" + str(lib)
+        TextLibraryData.__table__.name = table_name
+        all_data = TextLibraryData.query.filter(TextLibrary.is_delete != 1).all()
+        data_json = []
+        for data in all_data:
+            if data.id != int(id):
+                data_json.append(data.as_dict())
+        return jsonify(code=20000, flag=True, message="查询成功",data=data_json)
+    except Exception as e:
+        return jsonify(code=20001, flag=False, message="查询失败")

@@ -5,6 +5,7 @@ class TextLibraryData(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     title = db.Column(db.String(255))
     summary = db.Column(db.Text)
+    keywords = db.Column(db.String(255))
     publish_time = db.Column(db.DateTime)
     author = db.Column(db.String(255))
     content = db.Column(db.Text)
