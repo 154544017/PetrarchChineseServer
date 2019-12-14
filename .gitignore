@@ -105,3 +105,8 @@ venv.bak/
 
 # my ignore
 .idea/
+
+time_event.txt
+evtss.txt
+evets.result_before_merge.txt
+petrarch_chinese/

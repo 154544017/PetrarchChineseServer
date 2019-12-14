@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from resource import db
 
 class TextLibraryData(db.Model):

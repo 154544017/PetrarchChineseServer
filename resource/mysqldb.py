@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # import mysql.connector
 #
 #
@@ -53,13 +55,7 @@
 # 				 'event_num int(11) not null,'\
 # 				 'event_result text not null'\
 # 				 ')'.format(table_name)
-# 	mydb = get_db()
-# 	cursor = mydb.cursor()
-# 	cursor.execute(drop_sql)
-# 	cursor.execute(create_sql)
-# 	mydb.commit()
-# 	mydb.disconnect()
-#
+
 #
 # def test():
 # 	# 动态生成两个类型的表，没有返回任何信息

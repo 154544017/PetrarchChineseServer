@@ -1,0 +1,29 @@
+# -*- coding: utf-8 -*-
+
+from resource import db
+
+class AnalysisProject(db.Model):
+	"""文本库分析表"""
+	__tablename__ = 'rs_analysis_project'
+
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(100))
+	analysis_fields = db.Column(db.String(255))
+	analysis_algorithm = db.Column(db.String(100))
+	analysis_type = db.Column(db.Integer)
+	status = db.Column(db.Integer)
+	dictionary_id = db.Column(db.Integer)
+	textlibrary_id = db.Column(db.Integer)
+	create_time = db.Column(db.DateTime)
+	create_user = db.Column(db.Integer)
+	start_time = db.Column(db.DateTime)
+	end_time = db.Column(db.DateTime)
+
+	is_delete = db.Column(db.Integer)
+	delete_user = db.Column(db.Integer)
+
+	def as_dict(self):
+		return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+	def __repr__(self):
+		return '<Analysis Project {}>'.format(self.name)

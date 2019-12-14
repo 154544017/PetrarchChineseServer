@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import request, Blueprint,jsonify,current_app,g
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired
 import hashlib

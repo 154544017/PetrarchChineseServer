@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class Config(object):
     # sqlalchemy的配置参数
     SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:123456@118.25.153.97:3306/Xlab?charset=utf8"

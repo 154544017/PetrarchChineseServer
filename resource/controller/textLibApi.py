@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import Flask, blueprints, jsonify, request, Blueprint,g
 from werkzeug.utils import secure_filename
 import os
