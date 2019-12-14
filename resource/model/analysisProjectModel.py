@@ -11,7 +11,7 @@ class AnalysisProject(db.Model):
 	analysis_fields = db.Column(db.String(255))
 	analysis_algorithm = db.Column(db.String(100))
 	analysis_type = db.Column(db.Integer)
-	status = db.Column(db.Integer)
+	status = db.Column(db.Integer, default=0) # 0为未完成， 1为已完成
 	dictionary_id = db.Column(db.Integer)
 	textlibrary_id = db.Column(db.Integer)
 	create_time = db.Column(db.DateTime)

@@ -22,7 +22,7 @@ def create_app():
 		app.register_blueprint(blueprint=userApi.user_api, url_prefix='/user')
 		app.register_blueprint(blueprint=textLibApi.textLib_api, url_prefix='/textlibrary')
 		app.register_blueprint(blueprint=dictionaryApi.dictionary_api, url_prefix='/dic')
-		app.register_blueprint(blueprint=eventLibApi.eventApi, url_prefix='/event_lib')
+		app.register_blueprint(blueprint=eventLibApi.eventLibApi, url_prefix='/event_lib')
 		app.register_blueprint(blueprint=eventResultApi.eventResultApi, url_prefix='/event_result')
 		# Create tables for our models
 		db.create_all()

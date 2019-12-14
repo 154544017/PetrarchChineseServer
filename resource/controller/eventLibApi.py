@@ -9,17 +9,17 @@ from petrarch_chinese.main import petrarch_chinese_main
 import thread, time
 import json
 
-eventApi = Blueprint(name='event_lib', import_name=__name__)
+eventLibApi = Blueprint(name='event_lib', import_name=__name__)
 
 
 def create_analysis_result_table(project_id):
 	table_name = 'rs_analysis_event_result_%s' % project_id
 	drop_sql = 'DROP TABLE IF EXISTS {}'.format(table_name)
 	create_sql = 'create table IF NOT EXISTS {}(' \
-				 'id int(20) not null primary key,' \
+				 'id int(20) not null primary key auto_increment,' \
 				 'text_id varchar(255) not null,' \
-				 'recall_rate decimal(10,2) not null,' \
-				 'accuracy_rate decimal(10,2) not null,' \
+				 'recall_rate decimal(10,2),' \
+				 'accuracy_rate decimal(10,2),' \
 				 'event_num int(11) not null,' \
 				 'event_result text not null' \
 				 ')'.format(table_name)
@@ -27,15 +27,15 @@ def create_analysis_result_table(project_id):
 	db.session.execute(create_sql)
 
 
-@eventApi.route('/test')
+@eventLibApi.route('/test')
 def test():
 	analysis_event("1")
 	return 'well done'
 
-
+# 在子线程中分析文本库的文本，并把提取到的事件载入分析结果库里
 def analysis_event(project_id):
 	# 创建对应的文本库数据表
-	# create_analysis_result_table(project_id)
+	create_analysis_result_table(project_id)
 
 	# TODO 调整petrarch参数
 	art_events = petrarch_chinese_main()
@@ -44,7 +44,7 @@ def analysis_event(project_id):
 	table_name = 'rs_analysis_event_result_%s' % project_id
 	AnalycisEventResult.__table__.name = table_name
 
-	# 保存字典
+	# 保存事件
 	try:
 		for art in art_events:
 			events = art_events[art]
@@ -59,6 +59,10 @@ def analysis_event(project_id):
 			db.session.add(new_result)
 			db.session.commit()
 
+		# 修改分析状态
+		project = AnalysisProject.query.get(project_id)
+		project.status = 1
+		db.session.commit()
 		print("ok")
 	except Exception as e:
 		print ('error')
@@ -71,7 +75,7 @@ def test_thread():
 
 
 # 开始一个文本库事件提取
-@eventApi.route('/', methods=['POST'])
+@eventLibApi.route('/', methods=['POST'])
 def create_analysis_event():
 	paras = request.json
 	lib_id = paras['lib_id']  # 文本库id
@@ -97,8 +101,8 @@ def create_analysis_event():
 	except:
 		return jsonify(code=20001, flag=False, message="创建事件分析结果失败")
 
-
-@eventApi.route('/<page>/<size>', methods=['POST'])
+# 得到指定位置的分析结果
+@eventLibApi.route('/<page>/<size>', methods=['POST'])
 def get_analysis_project(page, size):
 	try:
 		projects = AnalysisProject.query.filter(AnalysisProject.is_delete == 1).all()
@@ -112,3 +116,26 @@ def get_analysis_project(page, size):
 	except Exception as e:
 		print(e)
 		return jsonify(code=20001, flag=False, message="查询事件分析结果失败")
+
+
+# 删除特定的分析工程
+@eventLibApi.route('/<id>', methods=['DELETE'])
+def delete_analysis_project(id):
+	project = AnalysisProject.query.get(id)
+	if project is None:
+		return jsonify(code=20001, flag=False, message="不存在指定的文本库分析信息")
+	db.session.delete(project)
+	db.session.commit()
+	return jsonify(code=20000, flag=True, message="删除成功")
+
+# 获得分析状态
+@eventLibApi.route('/<id>', methods=['GET'])
+def get_analysis_status(id):
+	project = AnalysisProject.query.get(id)
+	if project is None:
+		return jsonify(code=20001, flag=False, message="不存在指定的文本库分析信息")
+	status = project.status
+	if status == 0:
+		return jsonify(code=20000, flag=True, message="未完成")
+	else:
+		return jsonify(code=20000, flag=True, message="完成")
