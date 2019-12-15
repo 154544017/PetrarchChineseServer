@@ -11,5 +11,8 @@ class Dictionary(db.Model):
     create_user = db.Column(db.Integer)
     create_time = db.Column(db.DateTime)
 
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
     def __repr__(self):
         return '<Dictionary {}>'.format(self.name)

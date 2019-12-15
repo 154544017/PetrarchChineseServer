@@ -6,7 +6,7 @@ from resource.controller import helloApi
 from . import config
 
 
-__all__ = ['db']
+# __all__ = ['db']
 
 app = Flask(__name__)
 db = SQLAlchemy()

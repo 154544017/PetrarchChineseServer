@@ -7,4 +7,4 @@ if __name__ == '__main__':
 	# reload(sys)
 	# sys.setdefaultencoding('utf-8')
 	app = resource.create_app()
-	app.run()
+	app.run(host="0.0.0.0")

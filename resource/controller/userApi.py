@@ -39,19 +39,19 @@ def verify_token(token):
     return uid
 
 
-# @app.before_request
-# def is_login():
-#     if request.path == "/user/login" or request.path == "/user/register" :
-#         return None
-#     token = request.headers.get("Authorization")
-#     if token:
-#         uid = verify_token(token)
-#         if type(uid) is int:
-#             g.uid = uid
-#         else:
-#             return jsonify(code=20002, flag=False, message=uid)
-#     else:
-#         return jsonify(code=20001,flag=False,message="请先登录")
+@app.before_request
+def is_login():
+    if request.path == "/user/login" or request.path == "/user/register" :
+        return None
+    token = request.headers.get("Authorization")
+    if token:
+        uid = verify_token(token)
+        if type(uid) is int:
+            g.uid = uid
+        else:
+            return jsonify(code=20002, flag=False, message=uid)
+    else:
+        return jsonify(code=20001,flag=False,message="请先登录")
 
 
 @user_api.route('/register', methods=['post'])
