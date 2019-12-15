@@ -9,7 +9,7 @@ class AnalysisProject(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(100))
 	analysis_fields = db.Column(db.String(255))
-	analysis_algorithm = db.Column(db.String(100))
+	analysis_algorithm = db.Column(db.Integer)
 	analysis_type = db.Column(db.Integer)
 	status = db.Column(db.Integer, default=0) # 0为未完成， 1为已完成
 	dictionary_id = db.Column(db.Integer)
