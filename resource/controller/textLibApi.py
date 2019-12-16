@@ -3,6 +3,7 @@
 from flask import Flask, blueprints, jsonify, request, Blueprint, g
 from werkzeug.utils import secure_filename
 import os
+import uuid
 
 from resource.model import dicModel
 from ..model.textLibModel import TextLibrary
@@ -137,7 +138,7 @@ def add_text_lib_data(lib):
     # 保存文件
     try:
         upload_file = request.files['data']
-        file_name = str(lib) + "_" + secure_filename(upload_file.filename)
+        file_name = str(lib) + "_" + str(uuid.uuid1()) + secure_filename(upload_file.filename)
         print(file_name)
         if upload_file is None:
             return jsonify(code=20001, flag=False, message="data_file is null")
@@ -220,9 +221,11 @@ def get_text_lib_data(lib, id):
         data_dict.update({"content":res})
         # get words cloud
         content = data.content
+        # trash_set
+        trash_set = {u"，", u"。", u"”", u"“", u"（", u"）", u"(", u")", u"！", u"？", u" ",u"、",u"《",u"》"}
 
         words_list = list(jieba.cut(content))
-        words_set = set(words_list)
+        words_set = set(words_list) - trash_set
         words_dict = {}
         for word in words_set:
             words_dict[word] = words_list.count(word)
