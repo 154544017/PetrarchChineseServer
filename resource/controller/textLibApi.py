@@ -208,8 +208,19 @@ def get_text_lib_data(lib, id):
         table_name = "rs_textlibrary_data_" + str(lib)
         TextLibraryData.__table__.name = table_name
         data = TextLibraryData.query.get(id)
+        # format content
+        data_dict = data.as_dict()
+        paragraphs = data.content.decode("utf-8").split(u"\u3000")
+        # remove the empty str
+        paragraphs = filter(None, paragraphs)
+        res = []
+        for p in paragraphs:
+            p = '\t' + p
+            res.append(p)
+        data_dict.update({"content":res})
         # get words cloud
         content = data.content
+
         words_list = list(jieba.cut(content))
         words_set = set(words_list)
         words_dict = {}
@@ -221,13 +232,14 @@ def get_text_lib_data(lib, id):
         words_list_sorted.sort(key=lambda e: e[1], reverse=True)
         top_word_num = 0
         list_rs = []
-
+        max_size = words_list_sorted[0][1]
+        rate = 100/max_size
         for topWordTup in words_list_sorted:
             if top_word_num == 20:
                 break
-            list_rs.append({"text": topWordTup[0], "size": topWordTup[1]})
+            list_rs.append({"text": topWordTup[0], "size": topWordTup[1]*rate})
             top_word_num += 1
-        return jsonify(code=20000, flag=True, message="查询成功", data={"data": data.as_dict(), "cloud": list_rs})
+        return jsonify(code=20000, flag=True, message="查询成功", data={"data": data_dict, "cloud": list_rs})
     except Exception as e:
         return jsonify(code=20001, flag=False, message="查询失败")
 
