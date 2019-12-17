@@ -140,10 +140,16 @@ class AnalysisThread(threading.Thread):
             # 修改分析状态
             session = Session()
             project = session.query(AnalysisProject).get(self.project_id)
+            project.end_time = datetime.datetime.now()
             project.status = 2  # 2是完成的意思
             session.commit()
             print("ok")
         except Exception as e:
+            session = Session()
+            project = session.query(AnalysisProject).get(self.project_id)
+            project.end_time = datetime.datetime.now()
+            project.status = 4  # 4是异常的意思
+            session.commit()
             print ('error')
             print (e)
 
@@ -192,7 +198,7 @@ def create_analysis_event():
 
 
 # 得到指定位置的分析结果
-@eventLibApi.route('/<page>/<size>', methods=['POST'])
+@eventLibApi.route('/<page>/<size>', methods=['GET'])
 def get_analysis_project(page, size):
     try:
         projects = AnalysisProject.query.filter(AnalysisProject.is_delete == 1).all()
@@ -228,6 +234,29 @@ def get_analysis_status(id):
     status = project.status
     return jsonify(code=20000, flag=True, message="未完成", data={"status": status})
 
+@eventLibApi.route('/detail/<id>', methods=['GET'])
+def get_analysis_detail(id):
+    project = AnalysisProject.query.get(id)
+    if project is None:
+        return jsonify(code=20001, flag=False, message="不存在指定的文本库分析信息")
+    textlib_id = project.textlibrary_id
+    TextLibraryData.__table__.name = 'rs_textlibrary_data_%s' % textlib_id
+
+    result_tablename = 'rs_analysis_event_result_%s' % id
+    AnalycisEventResult.__table__.name = result_tablename
+    analysis_results = db.session.query(AnalycisEventResult).all()
+    results = []
+    for analysis_result in analysis_results:
+        text_id = analysis_result.text_id
+        text_data = TextLibraryData.query.get(text_id)
+        result = analysis_result.as_dict()
+        result['content'] = text_data.content
+        result['title'] = text_data.title
+        result['text_id'] = text_id
+        results.append(result)
+
+
+    return jsonify(code=20000, flag=True, message="查询成功", data=results)
 
 @eventLibApi.route('/init', methods=['GET'])
 def get_libs_and_dicts():
