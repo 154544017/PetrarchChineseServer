@@ -19,7 +19,7 @@ class AnalysisProject(db.Model):
 	start_time = db.Column(db.DateTime)
 	end_time = db.Column(db.DateTime)
 
-	is_delete = db.Column(db.Integer)
+	is_delete = db.Column(db.Integer, default=0)
 	delete_user = db.Column(db.Integer)
 
 	def as_dict(self):
