@@ -17,7 +17,12 @@ class TextLibraryData(db.Model):
     is_delete = db.Column(db.Integer, default=0)
 
     def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        o_dict = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        if o_dict['create_time']:
+            o_dict['create_time'] = o_dict['create_time'].strftime(u'%Y-%m-%d %H:%m:%S')
+        if o_dict['publish_time']:
+            o_dict['publish_time'] = o_dict['publish_time'].strftime(u'%Y-%m-%d %H:%m:%S')
+        return o_dict
 
     def __repr__(self):
         return '<TEXT_LIBRARY_DATA {}>'.format(self.title)

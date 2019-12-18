@@ -19,7 +19,12 @@ class TextLibrary(db.Model):
     delete_time = db.Column(db.DateTime)
 
     def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        o_dict = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        if o_dict['create_time']:
+            o_dict['create_time'] = o_dict['create_time'].strftime(u'%Y-%m-%d %H:%m:%S')
+        if o_dict['delete_time']:
+            o_dict['delete_time'] = o_dict['delete_time'].strftime(u'%Y-%m-%d %H:%m:%S')
+        return o_dict
 
     def __repr__(self):
         return '<TEXT_LIBRARY {}>'.format(self.textlibrary_name)

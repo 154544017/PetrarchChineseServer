@@ -48,23 +48,24 @@ def get_event_detail(project_id, text_id):
 	AnalycisEventResult.__table__.name = result_tablename
 	result = AnalycisEventResult.query.filter(AnalycisEventResult.text_id == text_id).all()
 	result = result[0].as_dict()['event_result']
-	result = json.loads(result, encoding='utf-8')
+	result = json.loads(result, encoding='utf-8',strict=False)
 
 	results = []
 
 	for i_result in result:
 		origin = i_result["origin"]
 		# get Source
-		source = origin[1]
-		if "Source" in i_result:
-			source += ": " + i_result["Source"]
-		target = origin[2]
-		if "Target" in i_result:
-			target += ": " + i_result["Target"]
-		event_code = origin[3]
+		source = origin[0]
+		if "source" in i_result:
+			source += ": " + i_result["source"]
+		target = origin[1]
+		if "target" in i_result:
+			target += ": " + i_result["target"]
+		event_code = origin[2]
 		if "eventtext" in i_result:
 			event_code += ": " + i_result["eventtext"]
-		results.append({"source": source, "target": target, "event": event_code, "location": "北京",
+
+		results.append({"source": source, "target": target, "event": event_code, "location": i_result["location"],
 						"rs": "-".join(i_result["origin"])})
 
 	return jsonify(code=20000, flag=True, message="查询成功", text=text_dict, events=results)

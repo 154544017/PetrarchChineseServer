@@ -23,7 +23,14 @@ class AnalysisProject(db.Model):
 	delete_user = db.Column(db.Integer)
 
 	def as_dict(self):
-		return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+		o_dict = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+		if o_dict['create_time']:
+			o_dict['create_time'] = o_dict['create_time'].strftime(u'%Y-%m-%d %H:%m:%S')
+		if o_dict['start_time']:
+			o_dict['start_time'] = o_dict['start_time'].strftime(u'%Y-%m-%d %H:%m:%S')
+		if o_dict['end_time']:
+			o_dict['end_time'] = o_dict['end_time'].strftime(u'%Y-%m-%d %H:%m:%S')
+		return o_dict
 
 	def __repr__(self):
 		return '<Analysis Project {}>'.format(self.name)

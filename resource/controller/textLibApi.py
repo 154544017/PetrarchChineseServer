@@ -148,6 +148,8 @@ def add_text_lib_data(lib):
     except Exception as e:
         return jsonify(code=20002, flag=False, message="上传文件出错")
     # 处理文件
+    success_item = 0
+    message = None
     try:
         title = request.form.get("title")
         summary = request.form.get("summary")
@@ -159,14 +161,30 @@ def add_text_lib_data(lib):
         df = pd.read_excel(upload_path)
         all_data = df.loc[:, [title, summary, keywords, publish_time, author, content, url]].values
         for data in all_data:
-            new_article = TextLibraryData(title=data[0], summary=data[1], keywords=data[2],
-                                          publish_time=pd.Timestamp(data[3], tz=None).to_pydatetime(), author=data[4],
-                                          content=data[5], url=data[6], create_time=datetime.datetime.now())
-            db.session.add(new_article)
+            insertSQL = "insert into " + table_name + "(title,summary,keywords,publish_time,author,content,url,create_time,is_delete) values('" \
+                        + data[0] + "','" + data[1] + "','" + data[2] + "','" + \
+                        str(pd.Timestamp(data[3], tz=None).to_pydatetime()) + "','" + data[4] + "','" +\
+                        data[5] + "','" + data[6] + "','" + str(datetime.datetime.now())+"','"+str(0)+"')"
+            insertSQL = insertSQL.replace(r'"', r'\"')
+            insertSQL = insertSQL.replace(r'\u', r'\\u')
+            # new_article = TextLibraryData(title=data[0], summary=data[1], keywords=data[2],
+            #                               publish_time=pd.Timestamp(data[3], tz=None).to_pydatetime(), author=data[4],
+            #                               content=data[5], url=data[6], create_time=datetime.datetime.now())
+            # db.session.add(new_article)
+            db.session.execute(insertSQL)
             db.session.commit()
-        return jsonify(code=20000, flag=True, message="成功导入" + str(len(all_data)) + "条数据")
+            success_item += 1
+        message =  jsonify(code=20000, flag=True, message="成功导入" + str(success_item) + "条数据")
     except Exception as e:
-        return jsonify(code=20003, flag=False, message="文本库导入数据出错")
+        message =  jsonify(code=20003, flag=False, message="文本库导入数据出错")
+    finally:
+        tectLib = TextLibrary.query.get(lib)
+        print lib
+        tectLib.line_no = tectLib.line_no + success_item
+        tectLib.import_status = 0 if tectLib.line_no == 0 else 1
+        db.session.commit()
+        return message
+
 
 
 @textLib_api.route("/<lib>/<id>", methods=["put"])

@@ -8,7 +8,7 @@ import threading
 import time
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from flask import jsonify, request, Blueprint
+from flask import jsonify, request, Blueprint, g
 from resource.model.textLibModel import TextLibrary
 from petrarch_chinese.main import petrarch_chinese_main
 from resource import db
@@ -177,13 +177,13 @@ def create_analysis_event():
     type = paras['type']  # 提取分析类型
     name = paras['name']  # 事件提取名称
     dict_id = paras['dic_id']  # 词典id
-    # uid = g.uid  # 用户id
+    uid = g.uid  # 用户id
     # TODO 用户暂时写死，调试用
     if type != 13:
         return jsonify(code=20001, flag=False, message="算法类型错误")
 
     analysis_project = AnalysisProject(name=name, textlibrary_id=lib_id, analysis_algorithm=algorithm,
-                                       analysis_type=type, dictionary_id=dict_id, create_user='1',
+                                       analysis_type=type, dictionary_id=dict_id, create_user=uid,
                                        create_time=datetime.datetime.now())
     try:
         db.session.add(analysis_project)
