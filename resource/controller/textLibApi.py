@@ -238,7 +238,7 @@ def get_text_lib_data(lib, id):
         max_size = words_list_sorted[0][1]
         rate = 100/max_size
         for topWordTup in words_list_sorted:
-            if top_word_num == 20:
+            if top_word_num == 40:
                 break
             list_rs.append({"text": topWordTup[0], "size": topWordTup[1]*rate})
             top_word_num += 1
