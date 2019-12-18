@@ -15,6 +15,8 @@ from resource import db
 from resource.model.analysisProjectModel import AnalysisProject
 from resource.model.analysisProjectResultModel import AnalycisEventResult
 from resource.model.textLibDataModel import TextLibraryData
+from sqlalchemy import text
+from resource.model.analysisProjectResultModelSubThread import AnalycisEventResultSubThread
 
 eventLibApi = Blueprint(name='event_lib', import_name=__name__)
 
@@ -119,7 +121,7 @@ class AnalysisThread(threading.Thread):
 
         # 打开对应的结果库
         table_name = 'rs_analysis_event_result_%s' % self.project_id
-        AnalycisEventResult.__table__.name = table_name
+
 
         # 保存事件
         try:
@@ -127,10 +129,18 @@ class AnalysisThread(threading.Thread):
                 events = art_events[art]
                 event_num = len(events)
                 text_id = art
+
                 event_result = json.dumps(events)
                 new_result = AnalycisEventResult(text_id=text_id, event_num=event_num, event_result=event_result)
+
+                insertSQL = "insert into "+table_name+"(text_id,event_num,event_result) values('" + str(text_id) +"','" + str(event_num)+"','"+ event_result+"')"
+                # AnalycisEventResultSubThread.__table__.name = table_name
+                # temp = AnalycisEventResultSubThread(text_id=text_id,event_num=event_num,event_result=event_result)
+                insertSQL = insertSQL.replace(r'"',r'\"')
+                insertSQL = insertSQL.replace(r'\u', r'\\u')
+
                 session = Session()
-                session.add(new_result)
+                session.execute(insertSQL)
                 session.commit()
 
             # 修改分析状态
@@ -234,6 +244,7 @@ def get_analysis_status(id):
         return jsonify(code=20001, flag=False, message="不存在指定的文本库分析信息")
     status = project.status
     return jsonify(code=20000, flag=True, message="未完成", data={"status": status})
+
 
 @eventLibApi.route('/detail/<id>', methods=['GET'])
 def get_analysis_detail(id):
