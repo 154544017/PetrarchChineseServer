@@ -44,7 +44,7 @@ def create_analysis_result_table(project_id):
 def test():
     # init_petrarch('1', '1')
     # create_analysis_result_table('100')
-    # petrarch_chinese_main()
+    petrarch_chinese_main()
     return 'well done'
 
 
@@ -125,13 +125,9 @@ class AnalysisThread(threading.Thread):
         try:
             for art in art_events:
                 events = art_events[art]
-                result = []
-                event_num = 0
-                for event in events:
-                    result = result + event
-                    event_num = event_num + len(event)
+                event_num = len(events)
                 text_id = art
-                event_result = json.dumps(result)
+                event_result = json.dumps(events)
                 new_result = AnalycisEventResult(text_id=text_id, event_num=event_num, event_result=event_result)
                 session = Session()
                 session.add(new_result)
@@ -143,6 +139,9 @@ class AnalysisThread(threading.Thread):
             project.end_time = datetime.datetime.now()
             project.status = 2  # 2是完成的意思
             session.commit()
+
+            # 将用户事件分析结果保留到指定文件夹
+
             print("ok")
         except Exception as e:
             session = Session()
@@ -160,7 +159,7 @@ def test_thread():
 
 
 # 开始一个文本库事件提取
-@eventLibApi.route('/', methods=['POST'])
+@eventLibApi.route('', methods=['POST'])
 def create_analysis_event():
     paras = request.json
     lib_id = paras['lib_id']  # 文本库id
@@ -187,8 +186,6 @@ def create_analysis_event():
         create_analysis_result_table(id)
 
         # 子线程调用petrarch
-        # thread.start_new_thread(analysis_event, (id, lib_id, dict_id))
-        # analysis_event(id, lib_id, dict_id)
         analysis_thread = AnalysisThread(id, lib_id, dict_id, algorithm)
         analysis_thread.start()
         return jsonify(code=20000, flag=True, message="创建事件分析结果成功，分析程序将在后台运行")
@@ -221,6 +218,10 @@ def delete_analysis_project(id):
     if project is None:
         return jsonify(code=20001, flag=False, message="不存在指定的文本库分析信息")
     db.session.delete(project)
+
+    table_name = 'rs_analysis_event_result_%s' % id
+    drop_sql = 'DROP TABLE IF EXISTS {}'.format(table_name)
+    db.session.execute(drop_sql)
     db.session.commit()
     return jsonify(code=20000, flag=True, message="删除成功")
 
