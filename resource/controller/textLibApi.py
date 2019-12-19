@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask, blueprints, jsonify, request, Blueprint, g
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -14,7 +16,8 @@ import pandas as pd
 import jieba
 
 textLib_api = Blueprint(name="textLib_api", import_name=__name__)
-
+engine = create_engine("mysql+pymysql://root:123456@118.25.153.97:3306/Xlab?charset=utf8")
+Session = sessionmaker(bind=engine)
 
 def create_data_table(tb_id):
     tb_name = "rs_textlibrary_data_" + str(tb_id)
@@ -103,12 +106,13 @@ def delete_text_lib(id):
         text_lib.delete_time = datetime.datetime.now()
         db.session.commit()
         # 删除对应的文本库数据
-        table_name = "rs_textlibrary_data_" + str(id)
-        TextLibraryData.__table__.name = table_name
-        text_lib_all_data = TextLibraryData.query.all()
-        for data in text_lib_all_data:
-            data.is_delete = 1
-            db.session.commit()
+        # table_name = "rs_textlibrary_data_" + str(id)
+        # delete_sql = "update " + table_name + " set is_delete=1 where id=" + id
+        # TextLibraryData.__table__.name = table_name
+        # text_lib_all_data = TextLibraryData.query.all()
+        # for data in text_lib_all_data:
+        #     data.is_delete = 1
+        #     db.session.commit()
         return jsonify(code=20000, flag=True, message="删除成功")
     except:
         return jsonify(code=20001, flag=False, message="删除失败")
@@ -161,6 +165,7 @@ def add_text_lib_data(lib):
         df = pd.read_excel(upload_path)
         all_data = df.loc[:, [title, summary, keywords, publish_time, author, content, url]].values
         for data in all_data:
+            print len(data[5])
             insertSQL = "insert into " + table_name + "(title,summary,keywords,publish_time,author,content,url,create_time,is_delete) values('" \
                         + data[0] + "','" + data[1] + "','" + data[2] + "','" + \
                         str(pd.Timestamp(data[3], tz=None).to_pydatetime()) + "','" + data[4] + "','" +\
@@ -178,11 +183,12 @@ def add_text_lib_data(lib):
     except Exception as e:
         message =  jsonify(code=20003, flag=False, message="文本库导入数据出错")
     finally:
-        tectLib = TextLibrary.query.get(lib)
+        session = Session()
+        tectLib = session.query(TextLibrary).get(lib)
         print lib
         tectLib.line_no = tectLib.line_no + success_item
         tectLib.import_status = 0 if tectLib.line_no == 0 else 1
-        db.session.commit()
+        session.commit()
         return message
 
 
@@ -208,9 +214,12 @@ def modify_text_lib_data(lib, id):
 def delete_text_lib_data(lib, id):
     try:
         table_name = "rs_textlibrary_data_" + str(lib)
-        TextLibraryData.__table__.name = table_name
-        data = TextLibraryData.query.get(id)
-        data.is_delete = 1
+        delete_sql = "update " + table_name + " set is_delete=1 where id=" + id
+        # TextLibraryData.__table__.name = table_name
+        # data = TextLibraryData.query.get(id)
+        # data.is_delete = 1
+        # db.session.commit()
+        db.session.execute(delete_sql)
         db.session.commit()
         lib = TextLibrary.query.get(lib)
         lib.line_no = lib.line_no - 1
