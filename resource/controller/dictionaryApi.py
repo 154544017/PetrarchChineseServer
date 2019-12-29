@@ -79,6 +79,7 @@ def get__all_dict(page, size):
     except Exception as e:
         return jsonify(code=20001, flag=False, message="查询失败")
 
+
 @dictionary_api.route("/download/<id>",methods=["get"])
 def download(id):
     dictionary = dicModel.Dictionary.query.filter_by(id=id).first()
@@ -90,3 +91,78 @@ def download(id):
 
 
     return send_file(file_path)
+
+# return 'xx [---] '
+def get_event_code(event):
+    event_array = event.split(" ")
+    temp_str = ""
+    temp_str += event_array[0]
+    temp_str += " ["
+    if len(event_array) > 1:
+        temp_str += event_array[1] + "]"
+    else:
+        temp_str += "---] "
+    return temp_str.encode("utf-8")
+
+@dictionary_api.route("/self",methods=["post"])
+def create_dictionary_self():
+    """
+    json
+    {
+        name: "dict_name",
+        words:[{main:"main_name",same:"a1 a2 a3"}],
+        events:[{main:"main_name 010",same:"a1 020, a2 030",slave:[{value:"name 040",select:"1/新增(2/选择)"}]
+    }
+    """
+    try:
+        params = request.json
+        diction_name = params["name"]
+        words = params["words"]
+        events = params["events"]
+        result_str = []
+        # synonym sets
+        result_str.append("####### SYNONYM SETS #######")
+        result_str.append("")
+        for word in words:
+            main_word = word["main"]
+            result_str.append("&"+main_word)
+            same_words = word["same"].split(" ")
+            for same_word in same_words:
+                result_str.append("+"+same_word)
+            result_str.append("")
+        result_str.append("")
+        # verbs patterns
+        result_str.append("####### VERB PATTERNS #######")
+        result_str.append("")
+        for event in events:
+            verb = event["main"]
+            same_verb = event["same"]
+            verb_slaves = event["slave"]
+            temp_str = "--- "
+            temp_str += get_event_code(verb) + "---"
+            result_str.append(temp_str)
+            same_verbs = same_verb.split(",")
+            for same in same_verbs:
+                s = same.strip()
+                result_str.append(get_event_code(s))
+            for slave in verb_slaves:
+                temp_str = "- * "
+                if int(slave["select"]) == 2:
+                    temp_str += "&"
+                temp_str += get_event_code(slave["value"])
+                result_str.append(temp_str)
+            for i in range(4):
+                result_str += ""
+        upload_path = os.path.join(os.path.abspath('..'), 'PetrarchChineseServer', 'dictionary', diction_name+".txt")
+        print upload_path
+        with open(upload_path,"w") as f:
+            f.write("\n".join(result_str))
+        # write in db
+        dictionary = dicModel.Dictionary(name=diction_name, file_name=diction_name+".txt", create_user=2,
+                                         create_time=datetime.datetime.now())
+        db.session.add(dictionary)
+        db.session.commit()
+        return jsonify(code=20000, flag=True, message="字典创建成功")
+    except Exception as e:
+        return jsonify(code=20001, flag=False, message="新建字典失败")
+
