@@ -72,12 +72,17 @@ class AnalysisThread(threading.Thread):
     def init_petrarch(self):
 
         # 调整合并事件开关
-        config = ConfigParser()
-        config.read('petrarch_chinese/configFile.ini')
+        petr_cn_config = ConfigParser()
+        petr_cn_config.read('petrarch_chinese/configFile.ini')
         if self.algorithm == 0:
-            config.set('Options', 'merge_event', 'False')
+            petr_cn_config.set('Options', 'merge_event', 'False')
         elif self.algorithm == 1:
-            config.set('Options', 'merge_event', 'True')
+            petr_cn_config.set('Options', 'merge_event', 'True')
+        try:
+            with open('petrarch_chinese/configFile.ini', 'w+') as f:
+                petr_cn_config.write(f)
+        except Exception as e:
+            print (e)
 
         # 获取输入文本，并写到petrarch对应位置
         lib_tablename = 'rs_textlibrary_data_%s' % self.lib_id
@@ -104,8 +109,16 @@ class AnalysisThread(threading.Thread):
                 input_list = [str(text) for text in input_list]
                 input_text = '|'.join(input_list).decode('utf-8')
                 t.write(input_text + '\n')
+        # TODO 如何从dict_id 到字典名称的映射，没表关键是
+        dict_name = '新建字典测试.txt'
+        petr_config = ConfigParser()
+        petr_config.read('petrarch_chinese/petrarch2/data/config/PETR_config.ini')
+        petr_config.set('Dictionaries', 'verbfile_name', dict_name)
+        petr_config.set('Dictionaries', 'test', 'True')
 
-    # TODO 调整输入字典
+        with open('petrarch_chinese/petrarch2/data/config/PETR_config.ini', 'w+') as fc:
+            petr_config.write(fc)
+
 
     # 在子线程中分析文本库的文本，并把提取到的事件载入分析结果库里
     def analysis_event(self):
