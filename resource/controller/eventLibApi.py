@@ -15,6 +15,7 @@ from resource import db
 from resource.model.analysisProjectModel import AnalysisProject
 from resource.model.analysisProjectResultModel import AnalycisEventResult
 from resource.model.textLibDataModel import TextLibraryData
+from resource.model.dicModel import Dictionary
 from sqlalchemy import text
 from resource.model.analysisProjectResultModelSubThread import AnalycisEventResultSubThread
 
@@ -109,8 +110,9 @@ class AnalysisThread(threading.Thread):
                 input_list = [str(text) for text in input_list]
                 input_text = '|'.join(input_list).decode('utf-8')
                 t.write(input_text + '\n')
-        # TODO 如何从dict_id 到字典名称的映射，没表关键是
-        dict_name = '新建字典测试.txt'
+        session = Session()
+        dictionary = session.query(Dictionary).get(self.dict_id)
+        dict_name = dictionary.file_name
         petr_config = ConfigParser()
         petr_config.read('petrarch_chinese/petrarch2/data/config/PETR_config.ini')
         petr_config.set('Dictionaries', 'verbfile_name', dict_name)
