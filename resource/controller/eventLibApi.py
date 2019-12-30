@@ -277,9 +277,15 @@ def get_analysis_detail(id):
         text_id = analysis_result.text_id
         text_data = TextLibraryData.query.get(text_id)
         result = analysis_result.as_dict()
-        result['content'] = text_data.content
+        result['content'] = text_data.content.encode("utf-8")
         result['title'] = text_data.title
         result['text_id'] = text_id
+        unicode_dict_list = json.loads(result['event_result'], encoding='utf-8',strict=False)
+        for unicode_dict in unicode_dict_list:
+            for key in unicode_dict:
+                if key != "origin":
+                    unicode_dict[key] = unicode_dict[key].encode("utf-8")
+        result['event_result'] = unicode_dict_list
         results.append(result)
 
 

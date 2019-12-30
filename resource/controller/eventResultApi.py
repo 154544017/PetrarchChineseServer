@@ -54,18 +54,28 @@ def get_event_detail(project_id, text_id):
 
 	for i_result in result:
 		origin = i_result["origin"]
+		content = i_result["content"].encode("utf-8")
 		# get Source
 		source = origin[0]
-		if "source" in i_result:
-			source += ": " + i_result["source"]
+		if "source" in i_result and i_result["source"] != '---':
+			source = i_result["source"]
 		target = origin[1]
-		if "target" in i_result:
-			target += ": " + i_result["target"]
-		event_code = origin[2]
+		if "target" in i_result and i_result["target"] != '---':
+			target = i_result["target"]
+		if "eventroot" in i_result and i_result["eventroot"] != '---':
+			ls = i_result["eventroot"].split(" ")
+			if len(ls) > 1:
+				event_code = i_result["eventroot"].split(" ")[1]
+			else:
+				event_code = i_result["eventroot"].split(" ")[0]
+		else:
+			event_code = origin[2]
+		event_code += " "
 		if "eventtext" in i_result:
-			event_code += ": " + i_result["eventtext"]
-
+			event_code += i_result["eventtext"]
+		else:
+			event_code += "---"
 		results.append({"source": source, "target": target, "event": event_code, "location": i_result["location"],
-						"rs": "-".join(i_result["origin"])})
+						"rs": source+" " + event_code + " " + target, "content": content})
 
 	return jsonify(code=20000, flag=True, message="查询成功", text=text_dict, events=results)
