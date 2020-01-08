@@ -88,8 +88,6 @@ def download(id):
     file_name = dictionary.file_name
     file_path = os.path.join(os.path.abspath('..'), 'PetrarchChineseServer', 'dictionary', file_name)
     # 首先定义一个生成器，每次读取512个字节
-
-
     return send_file(file_path)
 
 # return 'xx [---] '
