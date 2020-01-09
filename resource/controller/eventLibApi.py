@@ -21,10 +21,11 @@ from resource.model.analysisProjectResultModelSubThread import AnalycisEventResu
 
 eventLibApi = Blueprint(name='event_lib', import_name=__name__)
 
-engine = create_engine("mysql+pymysql://root:123456@118.25.153.97:3306/Xlab?charset=utf8")
+engine = create_engine("mysql+pymysql://root:root@localhost:3306/lab?charset=utf8")
 Session = sessionmaker(bind=engine)
 
 threadLock = threading.Lock()
+current_project_id = None
 
 
 def create_analysis_result_table(project_id):
@@ -65,9 +66,20 @@ class AnalysisThread(threading.Thread):
         # 可选的timeout参数不填时将一直阻塞直到获得锁定
         # 否则超时后将返回False
         threadLock.acquire()
-        self.analysis_event()
-        # 释放锁
-        threadLock.release()
+        try:
+            self.analysis_event()
+        except Exception as e:
+            print e
+            session = Session()
+            project = session.query(AnalysisProject).get(self.project_id)
+            project.end_time = datetime.datetime.now()
+            project.status = 4  # 4是异常的意思
+            session.commit()
+
+        finally:
+            # 释放锁
+            threadLock.release()
+
 
     # 调整petrarch输入内容:调整事件合并开关、输入文本和输入字典
     def init_petrarch(self):

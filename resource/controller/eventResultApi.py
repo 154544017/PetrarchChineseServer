@@ -655,13 +655,13 @@ def get_event_detail(project_id, text_id):
 	results = []
 
 	for i_result in result:
-		origin = i_result["origin"]
+		origin = i_result["origin"].split(" ")
 		content = i_result["content"].encode("utf-8")
 		# get Source
-		source = origin[0]
+		source = origin[2]
 		if "source" in i_result and i_result["source"] != '---':
 			source = i_result["source"]
-		target = origin[1]
+		target = origin[3]
 		if "target" in i_result and i_result["target"] != '---':
 			target = i_result["target"]
 		if "eventroot" in i_result and i_result["eventroot"] != '---':
@@ -671,7 +671,7 @@ def get_event_detail(project_id, text_id):
 			else:
 				event_code = i_result["eventroot"].split(" ")[0]
 		else:
-			event_code = origin[2]
+			event_code = origin[4]
 		event_code += " "
 		if "eventtext" in i_result:
 			event_code += i_result["eventtext"]
